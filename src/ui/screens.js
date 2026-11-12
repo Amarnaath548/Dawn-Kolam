@@ -167,6 +167,7 @@ export function createScreenManager(container, levels) {
         <div class="header" style="margin-bottom: 8px;">
           <div id="status-text" class="status">${state.drawn.size} / ${state.solution.size} edges</div>
           <div class="controls">
+            <button id="btn-hint" type="button">💡 Hint</button>
             <button id="btn-undo" type="button">Undo</button>
             <button id="btn-restart" type="button">Restart</button>
           </div>
@@ -180,6 +181,7 @@ export function createScreenManager(container, levels) {
     const svg = container.querySelector('#kolam-board');
     const statusEl = container.querySelector('#status-text');
     const alertEl = container.querySelector('#dead-end-alert');
+    const btnHint = container.querySelector('#btn-hint');
     const btnUndo = container.querySelector('#btn-undo');
     const btnRestart = container.querySelector('#btn-restart');
     const btnBack = container.querySelector('#play-btn-back');
@@ -231,10 +233,25 @@ export function createScreenManager(container, levels) {
         currentHint = remaining[0];
         state.hintsUsed = (state.hintsUsed || 0) + 1;
         renderer.showHint(currentHint);
+
+        const [k1, k2] = currentHint.split(':');
+        renderer.highlightDot(k1, true);
+        renderer.highlightDot(k2, true);
+        statusEl.textContent = '💡 Hint: Drag along the highlighted curve';
+
+        setTimeout(() => {
+          renderer.highlightDot(k1, false);
+          renderer.highlightDot(k2, false);
+          if (!isFinished) updateProgress(false);
+        }, 3200);
       }
     }
 
     resetHintTimer();
+
+    btnHint?.addEventListener('click', () => {
+      triggerHint();
+    });
 
     btnUndo?.addEventListener('click', () => {
       undo(state);
@@ -256,8 +273,8 @@ export function createScreenManager(container, levels) {
       svg,
       dots,
       isNeighbor: (a, b) => isNeighbor(a, b, activeKeys),
-      onAttemptEdge: (fromKey, toKey) => {
-        if (isFinished) return;
+      onAttemptEdge: (fromKey, toKey, isRelease = true) => {
+        if (isFinished) return null;
         const result = tryAddEdge(state, fromKey, toKey);
         if (result.status === 'correct') {
           renderer.renderDrawn(state.drawn);
@@ -296,9 +313,10 @@ export function createScreenManager(container, levels) {
             updateProgress(false);
             if (alertEl) alertEl.style.display = 'none';
           }, 900);
-        } else if (result.status === 'wrong') {
+        } else if (result.status === 'wrong' && isRelease) {
           renderer.showWrongFeedback(fromKey, toKey);
         }
+        return result;
       },
       onPreviewUpdate: (fromKey, pointerPt) => {
         if (isFinished) return;

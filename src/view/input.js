@@ -63,8 +63,10 @@ export function setupInput({
     if (fromKey) {
       const toKey = nearestDot(pt, snap);
       if (toKey && toKey !== fromKey && isNeighbor(fromKey, toKey)) {
-        onAttemptEdge(fromKey, toKey);
-        fromKey = toKey;
+        const result = onAttemptEdge(fromKey, toKey, false);
+        if (result && result.status === 'correct') {
+          fromKey = toKey;
+        }
       }
     }
 
@@ -73,6 +75,16 @@ export function setupInput({
 
   function handlePointerUp(e) {
     if (!dragging || e.pointerId !== activePointerId) return;
+    const pt = toSvgCoords(e);
+    const snap = e.pointerType === 'touch' ? defaultSnap * 1.3 : defaultSnap;
+
+    if (fromKey) {
+      const toKey = nearestDot(pt, snap);
+      if (toKey && toKey !== fromKey && isNeighbor(fromKey, toKey)) {
+        onAttemptEdge(fromKey, toKey, true);
+      }
+    }
+
     dragging = false;
     activePointerId = null;
     fromKey = null;

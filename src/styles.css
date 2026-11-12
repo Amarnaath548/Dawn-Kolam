@@ -191,17 +191,26 @@ svg#kolam-board {
 }
 
 .hint-edge {
-  stroke: rgba(255, 255, 255, 0.4);
-  stroke-width: 2.2;
-  stroke-dasharray: 2 3;
+  stroke: var(--accent-color, #fbbf24);
+  stroke-width: 2.6;
+  stroke-dasharray: 4 4;
   stroke-linecap: round;
   fill: none;
-  animation: hintPulse 2s infinite ease-in-out;
+  animation: hintPulse 1.2s infinite linear;
 }
 
 @keyframes hintPulse {
-  0%, 100% { opacity: 0.25; }
-  50% { opacity: 0.75; }
+  0% {
+    opacity: 0.4;
+    stroke-dashoffset: 16;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.4;
+    stroke-dashoffset: 0;
+  }
 }
 
 .debug-dot-key {
