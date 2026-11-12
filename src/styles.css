@@ -23,15 +23,17 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   user-select: none;
   -webkit-user-select: none;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 #app {
   width: 100%;
   max-width: 480px;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -234,6 +236,7 @@ svg#kolam-board {
   text-align: center;
   padding: 32px 16px;
   gap: 20px;
+  margin: auto 0;
 }
 
 .menu-screen h1 {
@@ -281,7 +284,17 @@ svg#kolam-board {
 
 .level-select-screen {
   width: 100%;
-  padding: 12px 0;
+  padding: 12px 0 32px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.worlds-scroll {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 24px;
 }
 
 .screen-header {

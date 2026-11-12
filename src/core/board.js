@@ -33,6 +33,6 @@ export function isNeighbor(keyA, keyB, activeKeys) {
   const dr = Math.abs(r1 - r2);
   const dc = Math.abs(c1 - c2);
   // Allow immediate neighbors and connecting across an intermediate/middle dot
-  return dr <= 2 && dc <= 2 && (dr + dc > 0);
+  return dr <= 3 && dc <= 3 && (dr + dc > 0);
 }
 

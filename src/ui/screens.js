@@ -120,7 +120,7 @@ export function createScreenManager(container, levels) {
           <h2>Worlds & Levels</h2>
           <div style="width: 48px;"></div>
         </div>
-        <div class="worlds-scroll" style="width: 100%; display: flex; flex-direction: column; gap: 8px; overflow-y: auto;">
+        <div class="worlds-scroll">
           ${worldsHtml}
         </div>
       </div>

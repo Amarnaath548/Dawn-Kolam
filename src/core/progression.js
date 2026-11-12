@@ -18,7 +18,7 @@ export const WORLDS = [
     nameTa: 'தொடர் ஓட்டம்',
     description: 'Over-under loop weaving around dots with dead-end penalty checks',
     mechanics: ['loop_weaving', 'dead_end_check'],
-    gridConstraints: { minGrid: 5, maxGrid: 5, weaveOffset: 0.2 },
+    gridConstraints: { minGrid: 5, maxGrid: 7, weaveOffset: 0.2 },
     winCondition: 'Weave around dots and cleanly close all interlaced loops',
     lossCondition: 'Dead-end penalty: trapping path resets stroke and deducts points',
     tools: ['stroke_weave', 'dead_end_validator']
