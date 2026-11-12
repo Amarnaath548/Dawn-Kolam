@@ -49,8 +49,13 @@ setupInput({
   onAttemptEdge: (fromKey, toKey) => {
     const result = tryAddEdge(state, fromKey, toKey);
     if (result.status === 'correct') {
-      renderer.renderDrawn(state.drawn);
-      updateProgress(result.complete);
+      if (result.complete) {
+        updateProgress(true);
+        renderer.playCompletion(state.drawn);
+      } else {
+        renderer.renderDrawn(state.drawn);
+        updateProgress(false);
+      }
     } else if (result.status === 'wrong') {
       renderer.showWrongFeedback(fromKey, toKey);
     }

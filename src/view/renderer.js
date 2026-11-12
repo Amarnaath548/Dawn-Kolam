@@ -1,4 +1,34 @@
+import { playCompletionAnimation, pulseDots } from './animate.js';
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
+
+export function getControlPoint(p1, p2, cx = 50, cy = 50, push = 3.5) {
+  const mx = (p1.x + p2.x) / 2;
+  const my = (p1.y + p2.y) / 2;
+  let vx = mx - cx;
+  let vy = my - cy;
+  let len = Math.hypot(vx, vy);
+
+  if (len < 0.001) {
+    const [a, b] = (p1.x < p2.x || (p1.x === p2.x && p1.y < p2.y)) ? [p1, p2] : [p2, p1];
+    const ex = b.x - a.x;
+    const ey = b.y - a.y;
+    const elen = Math.hypot(ex, ey) || 1;
+    vx = -ey / elen;
+    vy = ex / elen;
+    len = 1;
+  }
+
+  return {
+    x: mx + (vx / len) * push,
+    y: my + (vy / len) * push
+  };
+}
+
+export function getEdgePathD(p1, p2) {
+  const cp = getControlPoint(p1, p2);
+  return `M ${p1.x} ${p1.y} Q ${cp.x} ${cp.y} ${p2.x} ${p2.y}`;
+}
 
 export function createRenderer(svgElement, dots) {
   svgElement.innerHTML = '';
@@ -6,11 +36,40 @@ export function createRenderer(svgElement, dots) {
 
   const dotMap = new Map(dots.map(d => [d.key, d]));
 
+  // Defs with single blur glow filter
+  const defs = document.createElementNS(SVG_NS, 'defs');
+  const filter = document.createElementNS(SVG_NS, 'filter');
+  filter.setAttribute('id', 'kolam-glow');
+  filter.setAttribute('x', '-25%');
+  filter.setAttribute('y', '-25%');
+  filter.setAttribute('width', '150%');
+  filter.setAttribute('height', '150%');
+
+  const blur = document.createElementNS(SVG_NS, 'feGaussianBlur');
+  blur.setAttribute('in', 'SourceGraphic');
+  blur.setAttribute('stdDeviation', '1.6');
+  blur.setAttribute('result', 'blur');
+
+  const merge = document.createElementNS(SVG_NS, 'feMerge');
+  const m1 = document.createElementNS(SVG_NS, 'feMergeNode');
+  m1.setAttribute('in', 'blur');
+  const m2 = document.createElementNS(SVG_NS, 'feMergeNode');
+  m2.setAttribute('in', 'SourceGraphic');
+  merge.appendChild(m1);
+  merge.appendChild(m2);
+
+  filter.appendChild(blur);
+  filter.appendChild(merge);
+  defs.appendChild(filter);
+  svgElement.appendChild(defs);
+
+  // Layers bottom to top: guide, drawn edges, dots, preview line
   const guideGroup = document.createElementNS(SVG_NS, 'g');
   guideGroup.setAttribute('class', 'layer-guide');
 
   const drawnGroup = document.createElementNS(SVG_NS, 'g');
   drawnGroup.setAttribute('class', 'layer-drawn');
+  drawnGroup.setAttribute('filter', 'url(#kolam-glow)');
 
   const dotsGroup = document.createElementNS(SVG_NS, 'g');
   dotsGroup.setAttribute('class', 'layer-dots');
@@ -18,14 +77,10 @@ export function createRenderer(svgElement, dots) {
   const previewGroup = document.createElementNS(SVG_NS, 'g');
   previewGroup.setAttribute('class', 'layer-preview');
 
-  const feedbackGroup = document.createElementNS(SVG_NS, 'g');
-  feedbackGroup.setAttribute('class', 'layer-feedback');
-
   svgElement.appendChild(guideGroup);
   svgElement.appendChild(drawnGroup);
   svgElement.appendChild(dotsGroup);
   svgElement.appendChild(previewGroup);
-  svgElement.appendChild(feedbackGroup);
 
   // Render dots
   dots.forEach(d => {
@@ -35,13 +90,21 @@ export function createRenderer(svgElement, dots) {
     circle.setAttribute('r', '2.2');
     circle.setAttribute('class', 'kolam-dot');
     circle.dataset.key = d.key;
+
+    circle.addEventListener('pointerenter', () => {
+      circle.classList.add('pulse-touch');
+    });
+    circle.addEventListener('pointerleave', () => {
+      circle.classList.remove('pulse-touch');
+    });
+
     dotsGroup.appendChild(circle);
   });
 
-  const previewLine = document.createElementNS(SVG_NS, 'line');
-  previewLine.setAttribute('class', 'preview-line');
-  previewLine.style.display = 'none';
-  previewGroup.appendChild(previewLine);
+  const previewPath = document.createElementNS(SVG_NS, 'path');
+  previewPath.setAttribute('class', 'preview-line');
+  previewPath.style.display = 'none';
+  previewGroup.appendChild(previewPath);
 
   function renderGuide(solutionEdges) {
     guideGroup.innerHTML = '';
@@ -50,13 +113,10 @@ export function createRenderer(svgElement, dots) {
       const p1 = dotMap.get(k1);
       const p2 = dotMap.get(k2);
       if (!p1 || !p2) return;
-      const line = document.createElementNS(SVG_NS, 'line');
-      line.setAttribute('x1', p1.x);
-      line.setAttribute('y1', p1.y);
-      line.setAttribute('x2', p2.x);
-      line.setAttribute('y2', p2.y);
-      line.setAttribute('class', 'guide-edge');
-      guideGroup.appendChild(line);
+      const path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('d', getEdgePathD(p1, p2));
+      path.setAttribute('class', 'guide-edge');
+      guideGroup.appendChild(path);
     });
   }
 
@@ -67,26 +127,20 @@ export function createRenderer(svgElement, dots) {
       const p1 = dotMap.get(k1);
       const p2 = dotMap.get(k2);
       if (!p1 || !p2) return;
-      const line = document.createElementNS(SVG_NS, 'line');
-      line.setAttribute('x1', p1.x);
-      line.setAttribute('y1', p1.y);
-      line.setAttribute('x2', p2.x);
-      line.setAttribute('y2', p2.y);
-      line.setAttribute('class', 'drawn-edge');
-      drawnGroup.appendChild(line);
+      const path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('d', getEdgePathD(p1, p2));
+      path.setAttribute('class', 'drawn-edge');
+      drawnGroup.appendChild(path);
     });
   }
 
   function setPreview(p1, p2) {
     if (!p1 || !p2) {
-      previewLine.style.display = 'none';
+      previewPath.style.display = 'none';
       return;
     }
-    previewLine.setAttribute('x1', p1.x);
-    previewLine.setAttribute('y1', p1.y);
-    previewLine.setAttribute('x2', p2.x);
-    previewLine.setAttribute('y2', p2.y);
-    previewLine.style.display = '';
+    previewPath.setAttribute('d', getEdgePathD(p1, p2));
+    previewPath.style.display = '';
   }
 
   function showWrongFeedback(keyA, keyB) {
@@ -94,21 +148,17 @@ export function createRenderer(svgElement, dots) {
     const p2 = dotMap.get(keyB);
     if (!p1 || !p2) return;
 
-    const line = document.createElementNS(SVG_NS, 'line');
-    line.setAttribute('x1', p1.x);
-    line.setAttribute('y1', p1.y);
-    line.setAttribute('x2', p2.x);
-    line.setAttribute('y2', p2.y);
-    line.setAttribute('class', 'wrong-edge-pulse');
-    feedbackGroup.appendChild(line);
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', getEdgePathD(p1, p2));
+    path.setAttribute('class', 'wrong-edge-pulse');
+    previewGroup.appendChild(path);
 
     svgElement.classList.remove('shake');
-    // Force reflow for retriggering animation
     void svgElement.offsetWidth;
     svgElement.classList.add('shake');
 
     setTimeout(() => {
-      line.remove();
+      path.remove();
       svgElement.classList.remove('shake');
     }, 400);
   }
@@ -120,13 +170,25 @@ export function createRenderer(svgElement, dots) {
     }
   }
 
+  function playCompletion(edges, onComplete) {
+    playCompletionAnimation({
+      drawnGroup,
+      dotsGroup,
+      dotMap,
+      edges,
+      getControlPoint,
+      onComplete
+    });
+  }
+
   return {
     dotMap,
     renderGuide,
     renderDrawn,
     setPreview,
     showWrongFeedback,
-    highlightDot
+    highlightDot,
+    playCompletion,
+    pulseDots: () => pulseDots(dotsGroup)
   };
 }
-
