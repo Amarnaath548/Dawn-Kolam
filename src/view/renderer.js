@@ -30,7 +30,8 @@ export function getEdgePathD(p1, p2) {
   return `M ${p1.x} ${p1.y} Q ${cp.x} ${cp.y} ${p2.x} ${p2.y}`;
 }
 
-export function createRenderer(svgElement, dots) {
+export function createRenderer(svgElement, dots, options = {}) {
+  const isDebug = options.debug ?? (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug'));
   svgElement.innerHTML = '';
   svgElement.setAttribute('viewBox', '0 0 100 100');
 
@@ -40,14 +41,15 @@ export function createRenderer(svgElement, dots) {
   const defs = document.createElementNS(SVG_NS, 'defs');
   const filter = document.createElementNS(SVG_NS, 'filter');
   filter.setAttribute('id', 'kolam-glow');
-  filter.setAttribute('x', '-25%');
-  filter.setAttribute('y', '-25%');
-  filter.setAttribute('width', '150%');
-  filter.setAttribute('height', '150%');
+  filter.setAttribute('filterUnits', 'userSpaceOnUse');
+  filter.setAttribute('x', '-20');
+  filter.setAttribute('y', '-20');
+  filter.setAttribute('width', '140');
+  filter.setAttribute('height', '140');
 
   const blur = document.createElementNS(SVG_NS, 'feGaussianBlur');
   blur.setAttribute('in', 'SourceGraphic');
-  blur.setAttribute('stdDeviation', '1.6');
+  blur.setAttribute('stdDeviation', '1.2');
   blur.setAttribute('result', 'blur');
 
   const merge = document.createElementNS(SVG_NS, 'feMerge');
@@ -63,9 +65,12 @@ export function createRenderer(svgElement, dots) {
   defs.appendChild(filter);
   svgElement.appendChild(defs);
 
-  // Layers bottom to top: guide, drawn edges, dots, preview line
+  // Layers bottom to top: guide, hint, drawn edges, dots, preview line, debug
   const guideGroup = document.createElementNS(SVG_NS, 'g');
   guideGroup.setAttribute('class', 'layer-guide');
+
+  const hintGroup = document.createElementNS(SVG_NS, 'g');
+  hintGroup.setAttribute('class', 'layer-hint');
 
   const drawnGroup = document.createElementNS(SVG_NS, 'g');
   drawnGroup.setAttribute('class', 'layer-drawn');
@@ -78,9 +83,24 @@ export function createRenderer(svgElement, dots) {
   previewGroup.setAttribute('class', 'layer-preview');
 
   svgElement.appendChild(guideGroup);
+  svgElement.appendChild(hintGroup);
   svgElement.appendChild(drawnGroup);
   svgElement.appendChild(dotsGroup);
   svgElement.appendChild(previewGroup);
+
+  if (isDebug) {
+    const debugGroup = document.createElementNS(SVG_NS, 'g');
+    debugGroup.setAttribute('class', 'layer-debug');
+    dots.forEach(d => {
+      const text = document.createElementNS(SVG_NS, 'text');
+      text.setAttribute('x', d.x);
+      text.setAttribute('y', d.y - 3.5);
+      text.setAttribute('class', 'debug-dot-key');
+      text.textContent = d.key;
+      debugGroup.appendChild(text);
+    });
+    svgElement.appendChild(debugGroup);
+  }
 
   // Render dots
   dots.forEach(d => {
@@ -181,10 +201,29 @@ export function createRenderer(svgElement, dots) {
     });
   }
 
+  function showHint(edgeKey) {
+    hintGroup.innerHTML = '';
+    if (!edgeKey) return;
+    const [k1, k2] = edgeKey.split(':');
+    const p1 = dotMap.get(k1);
+    const p2 = dotMap.get(k2);
+    if (!p1 || !p2) return;
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', getEdgePathD(p1, p2));
+    path.setAttribute('class', 'hint-edge');
+    hintGroup.appendChild(path);
+  }
+
+  function clearHint() {
+    hintGroup.innerHTML = '';
+  }
+
   return {
     dotMap,
     renderGuide,
     renderDrawn,
+    showHint,
+    clearHint,
     setPreview,
     showWrongFeedback,
     highlightDot,
