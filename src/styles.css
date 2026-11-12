@@ -56,6 +56,27 @@ body {
   height: 1.2rem;
 }
 
+.controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.controls button {
+  background: #334155;
+  color: #f8fafc;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.controls button:hover {
+  background: #475569;
+}
+
 .board-container {
   width: 100%;
   aspect-ratio: 1 / 1;

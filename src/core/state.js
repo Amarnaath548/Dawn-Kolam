@@ -1,14 +1,16 @@
+import { expand, expandEdge } from './symmetry.js';
+
 export function normalizeEdge(a, b) {
   return a < b ? `${a}:${b}` : `${b}:${a}`;
 }
 
 export function createState(level) {
-  const solution = new Set(level.edges.map(([a, b]) => normalizeEdge(a, b)));
+  const solution = expand(level.edges, level.symmetry || 'none', level.grid);
   return {
     level,
     solution,
     drawn: new Set(),
-    history: [],
+    history: [], // each entry is an array of edges added in that move
     startedAt: Date.now(),
     hintsUsed: 0
   };
@@ -20,11 +22,19 @@ export function tryAddEdge(state, a, b) {
     return { status: 'already_drawn', edge };
   }
   if (state.solution.has(edge)) {
-    state.drawn.add(edge);
-    state.history.push(edge);
+    const group = expandEdge([a, b], state.level.symmetry || 'none', state.level.grid);
+    const added = [];
+    for (const e of group) {
+      if (!state.drawn.has(e)) {
+        state.drawn.add(e);
+        added.push(e);
+      }
+    }
+    state.history.push(added);
     return {
       status: 'correct',
       edge,
+      added,
       complete: isComplete(state)
     };
   }
@@ -32,14 +42,22 @@ export function tryAddEdge(state, a, b) {
 }
 
 export function undo(state) {
-  const edge = state.history.pop();
-  if (edge) {
-    state.drawn.delete(edge);
+  const edges = state.history.pop();
+  if (edges) {
+    for (const edge of edges) {
+      state.drawn.delete(edge);
+    }
   }
-  return edge;
+  return edges;
+}
+
+export function restart(state) {
+  state.drawn.clear();
+  state.history = [];
 }
 
 export function isComplete(state) {
   return state.drawn.size === state.solution.size;
 }
+
 
