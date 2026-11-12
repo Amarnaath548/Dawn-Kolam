@@ -5,8 +5,15 @@ import { setupInput } from '../view/input.js';
 import {
   markLevelCompleted,
   isLevelCompleted,
-  isLevelUnlocked
+  isLevelUnlocked,
+  loadProgress
 } from '../core/storage.js';
+import {
+  getWorlds,
+  getWorldForLevel,
+  getLevelsByWorld,
+  isWorldUnlocked
+} from '../core/progression.js';
 
 const HINT_DELAY_MS = 20000;
 
@@ -59,20 +66,49 @@ export function createScreenManager(container, levels) {
   }
 
   function renderLevelSelect() {
-    const listHtml = levels.map((lvl, index) => {
-      const completed = isLevelCompleted(lvl.id);
-      const unlocked = isLevelUnlocked(lvl.id, levels);
-      const statusClass = completed ? 'completed' : unlocked ? 'available' : 'locked';
-      const badgeText = completed ? '✓ Done' : unlocked ? 'Play' : '🔒 Locked';
-      const badgeClass = completed ? 'badge-completed' : unlocked ? 'badge-play' : 'badge-locked';
+    const worlds = getWorlds();
+    const progress = loadProgress();
+    const completedMap = progress.completed || {};
+
+    const worldsHtml = worlds.map(world => {
+      const worldUnlocked = isWorldUnlocked(world.id, levels, completedMap);
+      const worldLevels = getLevelsByWorld(levels, world.id);
+      const completedCount = worldLevels.filter(lvl => completedMap[lvl.id]).length;
+
+      const levelsHtml = worldLevels.map(lvl => {
+        const index = levels.findIndex(l => l.id === lvl.id);
+        const completed = Boolean(completedMap[lvl.id]);
+        const unlocked = isLevelUnlocked(lvl.id, levels);
+        const statusClass = completed ? 'completed' : unlocked ? 'available' : 'locked';
+        const badgeText = completed ? '✓ Done' : unlocked ? 'Play' : '🔒 Locked';
+        const badgeClass = completed ? 'badge-completed' : unlocked ? 'badge-play' : 'badge-locked';
+
+        return `
+          <div class="level-card ${statusClass}" data-index="${index}" role="button" tabindex="${unlocked ? 0 : -1}">
+            <div class="level-info">
+              <span class="level-card-title">${index + 1}. ${lvl.name}</span>
+              <span class="level-card-sub">${lvl.nameTa || ''}</span>
+            </div>
+            <span class="level-badge ${badgeClass}">${badgeText}</span>
+          </div>
+        `;
+      }).join('');
 
       return `
-        <div class="level-card ${statusClass}" data-index="${index}" role="button" tabindex="${unlocked ? 0 : -1}">
-          <div class="level-info">
-            <span class="level-card-title">${index + 1}. ${lvl.name}</span>
-            <span class="level-card-sub">${lvl.nameTa || ''}</span>
+        <div class="world-section ${worldUnlocked ? '' : 'world-locked'}">
+          <div class="world-header">
+            <div class="world-title-row">
+              <span class="world-title">World ${world.num}: ${world.name}</span>
+              <span style="font-size: 0.8rem; color: #94a3b8;">${completedCount}/${worldLevels.length}</span>
+            </div>
+            <span class="world-desc">${world.description}</span>
+            <div class="mechanic-tags">
+              ${world.mechanics.map(m => `<span class="mechanic-tag">${m.replace(/_/g, ' ')}</span>`).join('')}
+            </div>
           </div>
-          <span class="level-badge ${badgeClass}">${badgeText}</span>
+          <div class="level-list" style="margin-top: 8px;">
+            ${levelsHtml}
+          </div>
         </div>
       `;
     }).join('');
@@ -81,11 +117,11 @@ export function createScreenManager(container, levels) {
       <div class="screen level-select-screen">
         <div class="screen-header">
           <button id="select-btn-back" class="btn-icon" type="button">← Back</button>
-          <h2>Select Level</h2>
+          <h2>Worlds & Levels</h2>
           <div style="width: 48px;"></div>
         </div>
-        <div class="level-list">
-          ${listHtml}
+        <div class="worlds-scroll" style="width: 100%; display: flex; flex-direction: column; gap: 8px; overflow-y: auto;">
+          ${worldsHtml}
         </div>
       </div>
     `;
@@ -112,17 +148,22 @@ export function createScreenManager(container, levels) {
       return;
     }
 
+    const world = getWorldForLevel(level);
     const dots = getActiveDots(level);
     const activeKeys = new Set(dots.map(d => d.key));
     const state = createState(level);
 
     container.innerHTML = `
       <div class="screen play-screen">
-        <div class="screen-header" style="margin-bottom: 8px;">
+        <div class="screen-header" style="margin-bottom: 4px;">
           <button id="play-btn-back" class="btn-icon" type="button">← Levels</button>
-          <h2 style="font-size: 1.1rem;">${level.name} (${level.nameTa || ''})</h2>
+          <div style="text-align: center;">
+            <div class="world-pill">World ${world ? world.num : 1}: ${world ? world.name : ''}</div>
+            <h2 style="font-size: 1.05rem; margin: 0;">${level.name} (${level.nameTa || ''})</h2>
+          </div>
           <div style="width: 48px;"></div>
         </div>
+        <div id="dead-end-alert" class="dead-end-alert" style="display: none;"></div>
         <div class="header" style="margin-bottom: 8px;">
           <div id="status-text" class="status">${state.drawn.size} / ${state.solution.size} edges</div>
           <div class="controls">
@@ -138,6 +179,7 @@ export function createScreenManager(container, levels) {
 
     const svg = container.querySelector('#kolam-board');
     const statusEl = container.querySelector('#status-text');
+    const alertEl = container.querySelector('#dead-end-alert');
     const btnUndo = container.querySelector('#btn-undo');
     const btnRestart = container.querySelector('#btn-restart');
     const btnBack = container.querySelector('#play-btn-back');
@@ -226,13 +268,14 @@ export function createScreenManager(container, levels) {
             const elapsed = Math.max(1, Math.round((Date.now() - state.startedAt) / 1000));
             markLevelCompleted(level.id, {
               time: elapsed,
-              hints: state.hintsUsed || 0
+              hints: state.hintsUsed || 0,
+              penalties: state.penalties || 0
             });
             setTimeout(() => {
               renderer.playCompletion(state.drawn, () => {
                 show('complete', {
                   levelIndex,
-                  meta: { time: elapsed, hints: state.hintsUsed || 0 }
+                  meta: { time: elapsed, hints: state.hintsUsed || 0, world: world ? world.name : '' }
                 });
               });
             }, 400);
@@ -240,6 +283,19 @@ export function createScreenManager(container, levels) {
             updateProgress(false);
             resetHintTimer();
           }
+        } else if (result.status === 'dead_end') {
+          renderer.renderDrawn(state.drawn);
+          renderer.showWrongFeedback(fromKey, toKey);
+          if (alertEl) {
+            alertEl.style.display = 'block';
+            alertEl.textContent = 'Dead-end penalty! Trapped path resets stroke.';
+          }
+          setTimeout(() => {
+            undo(state);
+            renderer.renderDrawn(state.drawn);
+            updateProgress(false);
+            if (alertEl) alertEl.style.display = 'none';
+          }, 900);
         } else if (result.status === 'wrong') {
           renderer.showWrongFeedback(fromKey, toKey);
         }

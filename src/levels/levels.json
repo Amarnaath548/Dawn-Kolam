@@ -1,10 +1,16 @@
 [
   {
     "id": 1,
-    "name": "Diamond",
-    "nameTa": "வைரம்",
+    "world": 1,
+    "worldId": "world-1",
+    "worldName": "Dot Basics",
+    "name": "Pulli Kolam",
+    "nameTa": "புள்ளி கோலம்",
+    "description": "Fundamental dot grid single-stroke loop",
     "grid": 3,
     "symmetry": "mirror4",
+    "mechanics": ["dot_snapping", "single_stroke"],
+    "winCondition": "Complete the loop cleanly without lifting brush or finger",
     "edges": [
       ["0,1", "1,0"]
     ],
@@ -12,67 +18,204 @@
   },
   {
     "id": 2,
-    "name": "Cross",
-    "grid": 3,
+    "world": 1,
+    "worldId": "world-1",
+    "worldName": "Dot Basics",
+    "name": "Aishwarya Kolam",
+    "nameTa": "ஐஸ்வர்ய கோலம்",
+    "description": "Auspicious geometric wealth symbol single-stroke pattern",
+    "grid": 5,
     "symmetry": "mirror4",
+    "mechanics": ["dot_snapping", "single_stroke"],
+    "winCondition": "Complete continuous flow loop",
     "edges": [
-      ["1,1", "0,1"],
-      ["1,1", "1,0"]
+      ["0,2", "2,0"],
+      ["1,1", "1,3"]
     ],
     "guide": true
   },
   {
     "id": 3,
-    "name": "Star",
-    "nameTa": "நட்சத்திரம்",
-    "grid": 3,
-    "symmetry": "mirror4",
-    "edges": [
-      ["1,1", "0,0"],
-      ["1,1", "0,1"],
-      ["1,1", "1,0"]
-    ],
-    "guide": true
-  },
-  {
-    "id": 4,
-    "name": "Window",
-    "grid": 3,
-    "symmetry": "mirror4",
-    "edges": [
-      ["0,1", "1,0"],
-      ["1,1", "0,1"],
-      ["1,1", "1,0"]
-    ],
-    "guide": true
-  },
-  {
-    "id": 5,
-    "name": "Lamp",
-    "nameTa": "விளக்கு",
+    "world": 1,
+    "worldId": "world-1",
+    "worldName": "Dot Basics",
+    "name": "Hridaya Kamalam",
+    "nameTa": "ஹிருதய கமலம்",
+    "description": "Sacred 8-petaled lotus drawn in single continuous stroke",
     "grid": 5,
-    "symmetry": "mirror",
+    "symmetry": "mirror4",
+    "mechanics": ["dot_snapping", "single_stroke"],
+    "winCondition": "Clean continuous petal loop",
     "edges": [
       ["0,2", "1,1"],
       ["1,1", "2,2"],
-      ["2,2", "3,2"],
-      ["3,2", "3,1"],
+      ["2,2", "3,1"],
       ["3,1", "4,2"]
     ],
     "guide": true
   },
   {
-    "id": 6,
-    "name": "Lotus",
-    "nameTa": "தாமரை",
+    "id": 4,
+    "world": 2,
+    "worldId": "world-2",
+    "worldName": "Continuous Flow",
+    "name": "Sikku Kolam",
+    "nameTa": "சிக்கு கோலம்",
+    "description": "Interlaced knot loops winding continuously around dots",
     "grid": 5,
     "symmetry": "mirror4",
+    "mechanics": ["loop_weaving", "dead_end_check"],
+    "winCondition": "Weave around dots without dead-end entrapment",
+    "lossCondition": "Trapped line dead-end resets stroke",
+    "edges": [
+      ["0,2", "1,3"],
+      ["1,3", "2,4"],
+      ["2,4", "3,3"],
+      ["1,1", "2,0"],
+      ["2,0", "3,1"]
+    ],
+    "guide": true
+  },
+  {
+    "id": 5,
+    "world": 2,
+    "worldId": "world-2",
+    "worldName": "Continuous Flow",
+    "name": "Kambi Kolam",
+    "nameTa": "கம்பி கோலம்",
+    "description": "Interlocking wire braids with path entrapment detection",
+    "grid": 5,
+    "symmetry": "mirror4",
+    "mechanics": ["loop_weaving", "dead_end_check"],
+    "winCondition": "Clean braided closed knot loops",
+    "lossCondition": "Dead-end resets stroke",
     "edges": [
       ["0,2", "1,1"],
       ["1,1", "2,0"],
       ["1,2", "2,1"],
       ["0,2", "1,2"],
       ["2,0", "2,1"]
+    ],
+    "guide": true
+  },
+  {
+    "id": 6,
+    "world": 3,
+    "worldId": "world-3",
+    "worldName": "Symmetry & Borders",
+    "name": "Padi Kolam",
+    "nameTa": "படி கோலம்",
+    "description": "Stepped geometric temple threshold with Kaavi terracotta border fill",
+    "grid": 5,
+    "symmetry": "mirror4",
+    "mechanics": ["mirror_4way", "kaavi_border_fill"],
+    "tools": ["mirror4", "kaavi_fill"],
+    "winCondition": "Construct stepped frame and fill Kaavi terracotta border",
+    "edges": [
+      ["0,1", "0,3"],
+      ["0,1", "1,0"],
+      ["1,0", "3,0"],
+      ["0,3", "1,4"],
+      ["1,4", "3,4"],
+      ["3,0", "4,1"],
+      ["3,4", "4,3"],
+      ["4,1", "4,3"]
+    ],
+    "guide": true
+  },
+  {
+    "id": 7,
+    "world": 3,
+    "worldId": "world-3",
+    "worldName": "Symmetry & Borders",
+    "name": "Thamarai Kolam",
+    "nameTa": "தாமரை கோலம்",
+    "description": "8-way radial symmetry lotus mandala with axial mirror tool",
+    "grid": 5,
+    "symmetry": "mirror8",
+    "mechanics": ["mirror_8way"],
+    "tools": ["mirror8"],
+    "winCondition": "Radial 8-way mandala symmetry",
+    "edges": [
+      ["0,2", "1,1"],
+      ["1,1", "2,1"],
+      ["2,1", "2,2"]
+    ],
+    "guide": true
+  },
+  {
+    "id": 8,
+    "world": 3,
+    "worldId": "world-3",
+    "worldName": "Symmetry & Borders",
+    "name": "Maa Kolam",
+    "nameTa": "மா கோலம்",
+    "description": "Traditional wet rice paste ceremonial border fill pattern",
+    "grid": 5,
+    "symmetry": "mirror4",
+    "mechanics": ["mirror_4way", "kaavi_border_fill"],
+    "tools": ["mirror4", "kaavi_fill"],
+    "winCondition": "Draw ceremonial outline and flood-fill borders",
+    "edges": [
+      ["1,1", "0,2"],
+      ["0,2", "1,3"],
+      ["1,1", "2,0"],
+      ["2,0", "3,1"],
+      ["1,3", "2,4"],
+      ["2,4", "3,3"],
+      ["3,1", "4,2"],
+      ["4,2", "3,3"]
+    ],
+    "guide": true
+  },
+  {
+    "id": 9,
+    "world": 4,
+    "worldId": "world-4",
+    "worldName": "Festival Masterpieces",
+    "name": "Margazhi Poo Kolam",
+    "nameTa": "மார்கழி பூ கோலம்",
+    "description": "Grand festival dawn flower on pannable canvas with multi-layer Rangoli color powder fills",
+    "grid": 7,
+    "symmetry": "mirror8",
+    "mechanics": ["zoom_pan", "multi_layer_coloring", "rangoli_powders"],
+    "tools": ["mirror8", "rangoli_palette", "zoom_pan"],
+    "winCondition": "Draw master floral geometry and fill vibrant Rangoli colors",
+    "edges": [
+      ["0,3", "1,2"],
+      ["1,2", "2,2"],
+      ["2,2", "2,1"],
+      ["2,1", "3,0"],
+      ["2,2", "3,3"]
+    ],
+    "guide": true
+  },
+  {
+    "id": 10,
+    "world": 4,
+    "worldId": "world-4",
+    "worldName": "Festival Masterpieces",
+    "name": "Ratha Kolam",
+    "nameTa": "ரத கோலம்",
+    "description": "Temple festival chariot masterpiece with rice-flour base lines and Rangoli layers",
+    "grid": 7,
+    "symmetry": "mirror",
+    "mechanics": ["zoom_pan", "multi_layer_coloring", "rangoli_powders"],
+    "tools": ["mirror", "rangoli_palette", "zoom_pan"],
+    "winCondition": "Complete grand temple chariot and multi-layer festival colors",
+    "edges": [
+      ["0,3", "1,2"],
+      ["1,2", "2,1"],
+      ["2,1", "3,1"],
+      ["3,1", "4,1"],
+      ["4,1", "5,1"],
+      ["5,1", "6,2"],
+      ["6,2", "6,3"],
+      ["1,2", "1,3"],
+      ["2,1", "2,3"],
+      ["3,1", "3,3"],
+      ["4,1", "4,3"],
+      ["5,1", "5,3"]
     ],
     "guide": true
   }

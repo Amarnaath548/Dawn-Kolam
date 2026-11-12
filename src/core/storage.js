@@ -1,3 +1,5 @@
+import { isLevelUnlockedInProgression } from './progression.js';
+
 const STORAGE_KEY = 'kolam_puzzle_save';
 
 export function loadProgress() {
@@ -42,9 +44,7 @@ export function isLevelCompleted(levelId) {
 }
 
 export function isLevelUnlocked(levelId, levels) {
-  const idx = levels.findIndex(l => l.id === levelId);
-  if (idx <= 0) return true;
-  const prev = levels[idx - 1];
-  return isLevelCompleted(prev.id);
+  const current = loadProgress();
+  return isLevelUnlockedInProgression(levelId, levels, current.completed || {});
 }
 

@@ -1,4 +1,5 @@
 import { expand, expandEdge } from './symmetry.js';
+import { checkDeadEndPenalty, validateSingleStrokeLoop } from './progression.js';
 
 export function normalizeEdge(a, b) {
   return a < b ? `${a}:${b}` : `${b}:${a}`;
@@ -12,7 +13,9 @@ export function createState(level) {
     drawn: new Set(),
     history: [], // each entry is an array of edges added in that move
     startedAt: Date.now(),
-    hintsUsed: 0
+    hintsUsed: 0,
+    penalties: 0,
+    lastVertex: null
   };
 }
 
@@ -31,11 +34,38 @@ export function tryAddEdge(state, a, b) {
       }
     }
     state.history.push(added);
+    state.lastVertex = b;
+
+    const complete = isComplete(state);
+
+    // World 2 mechanic: Dead-end penalty check
+    if (!complete && state.level.mechanics && state.level.mechanics.includes('dead_end_check')) {
+      const deadEnd = checkDeadEndPenalty(b, state.drawn, state.solution);
+      if (deadEnd.deadEnd) {
+        state.penalties += 1;
+        return {
+          status: 'dead_end',
+          edge,
+          added,
+          stuckAt: b,
+          complete: false
+        };
+      }
+    }
+
+    // World 1 mechanic: Single-stroke continuous loop check
+    let strokeValid = true;
+    if (complete && state.level.mechanics && state.level.mechanics.includes('single_stroke')) {
+      const loopCheck = validateSingleStrokeLoop(state.drawn, true);
+      strokeValid = loopCheck.valid;
+    }
+
     return {
       status: 'correct',
       edge,
       added,
-      complete: isComplete(state)
+      strokeValid,
+      complete
     };
   }
   return { status: 'wrong', edge };

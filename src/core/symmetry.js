@@ -10,6 +10,11 @@ export function mirrorY(dotKey, grid) {
   return `${grid - 1 - r},${c}`;
 }
 
+export function transpose(dotKey) {
+  const [r, c] = dotKey.split(',').map(Number);
+  return `${c},${r}`;
+}
+
 export function expandEdge(edge, mode, grid) {
   const [a, b] = Array.isArray(edge) ? edge : edge.split(':');
   const set = new Set();
@@ -19,7 +24,7 @@ export function expandEdge(edge, mode, grid) {
     set.add(normalizeEdge(mirrorX(a, grid), mirrorX(b, grid)));
   } else if (mode === 'mirrorY') {
     set.add(normalizeEdge(mirrorY(a, grid), mirrorY(b, grid)));
-  } else if (mode === 'mirror4') {
+  } else if (mode === 'mirror4' || mode === 'mirror8') {
     const aX = mirrorX(a, grid), bX = mirrorX(b, grid);
     const aY = mirrorY(a, grid), bY = mirrorY(b, grid);
     const aXY = mirrorY(aX, grid), bXY = mirrorY(bX, grid);
@@ -27,6 +32,14 @@ export function expandEdge(edge, mode, grid) {
     set.add(normalizeEdge(aX, bX));
     set.add(normalizeEdge(aY, bY));
     set.add(normalizeEdge(aXY, bXY));
+
+    if (mode === 'mirror8') {
+      const baseFour = Array.from(set);
+      for (const e of baseFour) {
+        const [ea, eb] = e.split(':');
+        set.add(normalizeEdge(transpose(ea), transpose(eb)));
+      }
+    }
   }
 
   return Array.from(set);
